@@ -1,0 +1,7 @@
+otrta/target
+otrta/gateway/target
+otrta/pay/configuration/local.yaml
+otrta/gateway/configuration/local.yaml
+otrta/pay/.env
+*/**/.DS_Store
+.DS_Store
