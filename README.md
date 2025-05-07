@@ -137,6 +137,14 @@ There are two approaches to handling mint fees:
 docker-compose -f docker-compose.client.yaml up
 ```
 
+The user interface can be accessed at http://localhost:3332.
+
+At present, the wallet is designed to accept eCash tokens from Minitbits wallets, though this will be updated in the future.
+
+Currently, the client utilizes an external [Wallet](https://github.com/cashubtc/nutshell).
+
+Thank you to the creator of the Nutshell Wallet for their hard work!
+
 ### Cashu note Management Workflow
 
 1. **Get initial Cashu note**: Obtain a Cashu note from a Cashu mint
@@ -148,6 +156,7 @@ This approach allows for efficient micropayments for AI services without losing 
 
 ### Next step
 
+- [ ] Multi Wallet support
 - [ ] Develop a Payment History feature to monitor ecash transactions
 - [ ] Implement server/service provider discovery (possibly via Nostr)
 - [ ] Enhance handling of amounts under 1 sat
