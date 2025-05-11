@@ -10,7 +10,6 @@ export class TransactionService {
     params: TransactionListParams = { page: 1, pageSize: 10 }
   ): Promise<TransactionListResponse> {
     try {
-      // Convert any non-serializable params
       const queryParams = {
         ...params,
         fromDate: params.fromDate?.toString(),

@@ -8,9 +8,11 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Check,
+  X,
+  InfoIcon,
 } from 'lucide-react';
-import { TransactionService } from '@/lib/api/services/transactions';
-import { TransactionListParams } from '@/lib/api/schemas/transactions';
+import { CreditService, CreditListParams } from '@/lib/api/services/credits';
 import {
   Card,
   CardContent,
@@ -29,31 +31,24 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@/components/ui/hover-card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
-export function TransactionsMonitor({
+export function CreditsMonitor({
   defaultPageSize = 10,
 }: {
   refreshInterval?: number;
   defaultPageSize?: number;
 }) {
-  const [queryParams, setQueryParams] = useState<TransactionListParams>({
+  const [queryParams, setQueryParams] = useState<CreditListParams>({
     page: 1,
     pageSize: defaultPageSize,
-    type: 'all',
   });
 
   const { data, isLoading, isError, error, isFetching, refetch } = useQuery({
-    queryKey: ['transactions', queryParams],
+    queryKey: ['credits', queryParams],
     queryFn: async () => {
-      const params = {
-        ...queryParams,
-      };
-      return TransactionService.getTransactions(params);
+      return CreditService.getCredits(queryParams);
     },
   });
 
@@ -65,7 +60,7 @@ export function TransactionsMonitor({
     <Card className='h-full w-full shadow-sm'>
       <CardHeader className='pb-2'>
         <div className='flex items-center justify-between'>
-          <CardTitle className='text-xl'>Transactions</CardTitle>
+          <CardTitle className='text-xl'>Credits</CardTitle>
           <Button
             variant='ghost'
             size='icon'
@@ -79,27 +74,52 @@ export function TransactionsMonitor({
                 (isFetching || isLoading) && 'animate-spin'
               )}
             />
-            <span className='sr-only'>Refresh transactions</span>
+            <span className='sr-only'>Refresh credits</span>
           </Button>
         </div>
-        <CardDescription>Monitor eCash tokens</CardDescription>
+        <CardDescription>Monitor credits and redemption status</CardDescription>
       </CardHeader>
-      <CardContent>{renderTransactionList()}</CardContent>
+      <CardContent>
+        <Alert className='mb-6 bg-blue-50'>
+          <InfoIcon className='h-4 w-4' />
+          <AlertTitle>Credit and Redemption Status</AlertTitle>
+          <AlertDescription className='text-sm'>
+            <p className='mt-1'>
+              The credit system handles payments that don`&apos;`t use whole
+              sats. Currently, we use a rounding approach for micropayments:
+            </p>
+            <ul className='mt-2 ml-4 list-disc'>
+              <li>
+                Operations of only a fraction of one sat rounded up to 1 sat
+              </li>
+              <li>For operations costing e.g. 1.6 sats, you only pay 1 sats</li>
+              <li>
+                For operations costing e.g. 1.7 sats or more, you pay 2 sats
+              </li>
+            </ul>
+            <p className='mt-2'>
+              This view will track your credit balance when partial sat payments
+              are supported.
+            </p>
+          </AlertDescription>
+        </Alert>
+        {renderCreditsList()}
+      </CardContent>
       {data && data.pagination && (
         <CardFooter className='flex items-center justify-between pt-2'>
           <div className='text-muted-foreground text-sm'>
             {data.pagination.total > 0 ? (
               <>
                 Showing{' '}
-                {(data.pagination.page - 1) * data.pagination.page_size + 1}-
+                {(data.pagination.page - 1) * data.pagination.pageSize + 1}-
                 {Math.min(
-                  data.pagination.page * data.pagination.page_size,
+                  data.pagination.page * data.pagination.pageSize,
                   data.pagination.total
                 )}{' '}
-                of {data.pagination.total} transactions
+                of {data.pagination.total} credits
               </>
             ) : (
-              'No transactions'
+              'No credits'
             )}
           </div>
           <div className='flex items-center gap-1'>
@@ -114,7 +134,7 @@ export function TransactionsMonitor({
             <Button
               variant='outline'
               size='icon'
-              disabled={data.pagination.page >= data.pagination.total_pages}
+              disabled={data.pagination.page >= data.pagination.totalPages}
               onClick={() => handlePageChange(data.pagination.page + 1)}
             >
               <ChevronRight className='h-4 w-4' />
@@ -125,7 +145,7 @@ export function TransactionsMonitor({
     </Card>
   );
 
-  function renderTransactionList() {
+  function renderCreditsList() {
     if (isLoading) {
       return (
         <div className='flex items-center justify-center py-8'>
@@ -138,7 +158,7 @@ export function TransactionsMonitor({
       return (
         <div className='bg-destructive/10 text-destructive flex items-center space-x-2 rounded-md p-4'>
           <AlertCircle className='h-5 w-5' />
-          <span>Error loading transactions: {(error as Error).message}</span>
+          <span>Error loading credits: {(error as Error).message}</span>
         </div>
       );
     }
@@ -146,7 +166,7 @@ export function TransactionsMonitor({
     if (!data?.data.length) {
       return (
         <div className='text-muted-foreground py-8 text-center'>
-          No transactions found matching your criteria.
+          No credits found matching your criteria.
         </div>
       );
     }
@@ -158,31 +178,39 @@ export function TransactionsMonitor({
             <TableRow>
               <TableHead>Token</TableHead>
               <TableHead>Amount (sats)</TableHead>
-              <TableHead>Created At</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.data.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell className='max-w-[300px]'>
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <div className='text-primary cursor-pointer truncate font-mono text-sm'>
-                        {transaction.token}
-                      </div>
-                    </HoverCardTrigger>
-                    <HoverCardContent className='bg-card/80 border-primary/20 w-[400px] border p-4 backdrop-blur-sm'>
-                      <div className='text-primary bg-muted/30 max-h-[200px] overflow-auto rounded-md p-2 font-mono text-xs'>
-                        {transaction.token}
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
+            {data.data.map((credit) => (
+              <TableRow key={credit.id}>
+                <TableCell
+                  className='max-w-40 truncate font-mono text-xs'
+                  title={credit.token}
+                >
+                  {credit.token}
                 </TableCell>
-                <TableCell className='font-semibold'>
-                  {transaction.amount}
+                <TableCell className='font-medium'>{credit.amount}</TableCell>
+                <TableCell>
+                  {credit.redeemed ? (
+                    <Badge
+                      variant='outline'
+                      className='flex items-center gap-1 bg-red-100 text-red-800'
+                    >
+                      <X className='h-3 w-3' /> Redeemed
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant='outline'
+                      className='flex items-center gap-1 bg-green-100 text-green-800'
+                    >
+                      <Check className='h-3 w-3' /> Available
+                    </Badge>
+                  )}
                 </TableCell>
                 <TableCell>
-                  {new Date(transaction.created_at).toLocaleString()}
+                  {new Date(credit.created_at).toLocaleString()}
                 </TableCell>
               </TableRow>
             ))}

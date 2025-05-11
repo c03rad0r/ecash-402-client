@@ -2,25 +2,15 @@ import { z } from 'zod';
 
 export const TransactionSchema = z.object({
   id: z.string(),
-  type: z.enum(['incoming', 'outgoing', 'credit', 'redemption']),
-  amount: z.number(),
-  status: z.enum(['pending', 'completed', 'failed']),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  description: z.string().optional(),
-  reference: z.string().optional(),
-  creditId: z.string().optional(),
-  creditExpiry: z.string().datetime().optional(),
-  redemptionDate: z.string().datetime().optional(),
+  created_at: z.string().datetime(),
+  token: z.string(),
+  amount: z.string(),
 });
 
 export const TransactionListParamsSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(100).default(10),
-  type: z
-    .enum(['incoming', 'outgoing', 'credit', 'redemption', 'all'])
-    .optional(),
-  status: z.enum(['pending', 'completed', 'failed', 'all']).optional(),
+  type: z.enum(['transactions', 'credit', 'all']).optional(),
   fromDate: z.string().datetime().optional(),
   toDate: z.string().datetime().optional(),
 });
@@ -30,8 +20,8 @@ export const TransactionListResponseSchema = z.object({
   pagination: z.object({
     total: z.number(),
     page: z.number(),
-    pageSize: z.number(),
-    totalPages: z.number(),
+    page_size: z.number(),
+    total_pages: z.number(),
   }),
 });
 
