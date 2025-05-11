@@ -1,4 +1,8 @@
-use crate::{db::Pool, handlers::get_server_config, models::*};
+use crate::{
+    db::{Pool, change::add_change_transaction},
+    handlers::get_server_config,
+    models::*,
+};
 use axum::{
     Json,
     body::Body,
@@ -47,8 +51,7 @@ pub async fn forward_list_models(
 ) -> Response {
     let endpoint_fn = |base_endpoint: &str| -> String { format!("{}/v1/models", base_endpoint) };
 
-    let response =
-        forward_request_with_payment(headers, &state.db, &state.wallet, endpoint_fn).await;
+    let response = forward_request(headers, &state.db, endpoint_fn).await;
 
     response.into_response()
 }
@@ -103,26 +106,8 @@ pub async fn get_specific_model(
     let model_endpoint =
         move |endpoint: &str| -> String { format!("{}/v1/models/{}", endpoint, model_id) };
 
-    let response =
-        forward_request_with_payment(headers, &state.db, &state.wallet, model_endpoint).await;
+    let response = forward_request(headers, &state.db, model_endpoint).await;
     response.into_response()
-}
-
-pub async fn forward_request_with_payment(
-    original_headers: HeaderMap,
-    db: &Pool,
-    wallet: &CashuWalletClient,
-    endpoint_fn: impl Fn(&str) -> String,
-) -> Response<Body> {
-    forward_request_with_payment_with_body(
-        original_headers,
-        db,
-        wallet,
-        endpoint_fn,
-        None::<serde_json::Value>, // Use Value as a placeholder type
-        false,
-    )
-    .await
 }
 
 pub async fn forward_request_with_payment_with_body<T: serde::Serialize>(
@@ -172,7 +157,7 @@ pub async fn forward_request_with_payment_with_body<T: serde::Serialize>(
         req_builder = req_builder.json(&body_data);
     }
 
-    let token_result = wallet.send(10, None, None, None, None).await;
+    let token_result = wallet.send(20, None, None, None, None).await;
     let token = match token_result {
         Ok(token) => token.token,
         Err(e) => {
@@ -216,9 +201,134 @@ pub async fn forward_request_with_payment_with_body<T: serde::Serialize>(
                     .receive(Some(change_sats.to_str().unwrap()), None, None)
                     .await
                 {
-                    println!("received change, balance: '{}'", res.balance);
+                    println!(
+                        "received change, balance: '{}' '{}'",
+                        res.balance,
+                        change_sats.to_str().unwrap()
+                    );
                 }
             }
+
+            if let (Some(change_token), Some(change_amount)) = (
+                headers.get("X-CHANGE-TOKEN"),
+                headers.get("X-CHANGE-AMOUNT"),
+            ) {
+                let _ = add_change_transaction(
+                    &db,
+                    change_token.to_str().unwrap(),
+                    change_amount.to_str().unwrap(),
+                )
+                .await
+                .unwrap();
+            }
+
+            let response_headers = response.headers_mut().unwrap();
+            for (name, value) in headers.iter() {
+                if name != "connection" && name != "transfer-encoding" {
+                    response_headers.insert(name, value.clone());
+                }
+            }
+
+            let (tx, rx) = mpsc::channel::<Result<Vec<u8>, io::Error>>(100);
+            let mut stream = resp.bytes_stream();
+
+            tokio::spawn(async move {
+                while let Some(item) = stream.next().await {
+                    match item {
+                        Ok(chunk) => {
+                            if tx.send(Ok(chunk.to_vec())).await.is_err() {
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            let _ = tx
+                                .send(Err(io::Error::new(
+                                    io::ErrorKind::Other,
+                                    format!("Error reading from upstream: {}", e),
+                                )))
+                                .await;
+                            break;
+                        }
+                    }
+                }
+            });
+
+            let stream = ReceiverStream::new(rx);
+
+            let mapped_stream = stream.map(|result| {
+                result.map(|bytes| {
+                    let bytes: axum::body::Bytes = bytes.into();
+                    bytes
+                })
+            });
+
+            let body = Body::from_stream(mapped_stream);
+
+            return response.body(body).unwrap_or_else(|e| {
+                eprintln!("Error creating streaming response: {}", e);
+                Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from("Error creating streaming response"))
+                    .unwrap()
+            });
+        }
+        Err(error) => {
+            let error_json = Json(json!({
+                "error": {
+                    "message": format!("Error forwarding request: {}", error),
+                    "type": "gateway_error"
+                }
+            }));
+
+            (StatusCode::INTERNAL_SERVER_ERROR, error_json).into_response()
+        }
+    }
+}
+
+pub async fn forward_request(
+    original_headers: HeaderMap,
+    db: &Pool,
+    endpoint_fn: impl Fn(&str) -> String,
+) -> Response<Body> {
+    let server_config = if let Some(config) = get_server_config(&db).await {
+        config
+    } else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": {
+                    "message": "Server configuration missing. Cannot process request without a configured endpoint.",
+                    "type": "server_error",
+                    "param": null,
+                    "code": "server_config_missing"
+                }
+            })),
+        ).into_response();
+    };
+
+    let client_builder = Client::builder();
+
+    let client = client_builder.build().unwrap();
+    let endpoint_url = endpoint_fn(&server_config.endpoint);
+
+    let mut req_builder = client.get(endpoint_url);
+
+    req_builder = req_builder.header(
+        header::AUTHORIZATION,
+        format!("Bearer {}", server_config.api_key),
+    );
+    req_builder = req_builder.header(header::CONTENT_TYPE, "application/json");
+
+    if let Some(accept) = original_headers.get(header::ACCEPT) {
+        req_builder = req_builder.header(header::ACCEPT, accept);
+    }
+
+    match req_builder.send().await {
+        Ok(resp) => {
+            let status = resp.status();
+            let headers = resp.headers().clone();
+
+            let mut response = Response::builder().status(status);
 
             let response_headers = response.headers_mut().unwrap();
             for (name, value) in headers.iter() {

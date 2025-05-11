@@ -1,7 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { DatabaseIcon, LayoutDashboardIcon, SettingsIcon } from 'lucide-react';
+import {
+  DatabaseIcon,
+  LayoutDashboardIcon,
+  SettingsIcon,
+  HistoryIcon,
+} from 'lucide-react';
 
 import { NavSecondary } from '@/components/nav-secondary';
 import {
@@ -27,6 +32,11 @@ const data = {
       title: 'Dashboard',
       url: '/',
       icon: LayoutDashboardIcon,
+    },
+    {
+      title: 'Transactions',
+      url: '/transactions',
+      icon: HistoryIcon,
     },
     {
       title: 'Models',
