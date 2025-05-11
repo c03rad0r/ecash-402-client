@@ -47,7 +47,6 @@ export function TransactionsMonitor({
   const [queryParams, setQueryParams] = useState<TransactionListParams>({
     page: 1,
     pageSize: defaultPageSize,
-    type: 'all',
   });
 
   const { data, isLoading, isError, error, isFetching, refetch } = useQuery({

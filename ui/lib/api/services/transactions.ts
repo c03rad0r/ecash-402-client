@@ -12,9 +12,6 @@ export class TransactionService {
     try {
       const queryParams = {
         ...params,
-        fromDate: params.fromDate?.toString(),
-        toDate: params.toDate?.toString(),
-        direction: params.direction,
       };
 
       const response = await apiClient.get<TransactionListResponse>(

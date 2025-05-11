@@ -11,10 +11,6 @@ export const TransactionSchema = z.object({
 export const TransactionListParamsSchema = z.object({
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(100).default(10),
-  type: z.enum(['transactions', 'credit', 'all']).optional(),
-  fromDate: z.string().datetime().optional(),
-  toDate: z.string().datetime().optional(),
-  direction: z.enum(['Incoming', 'Outgoing']),
 });
 
 export const TransactionListResponseSchema = z.object({
