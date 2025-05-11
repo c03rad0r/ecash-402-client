@@ -5,6 +5,7 @@ export const TransactionSchema = z.object({
   created_at: z.string().datetime(),
   token: z.string(),
   amount: z.string(),
+  direction: z.enum(['Incoming', 'Outgoing']),
 });
 
 export const TransactionListParamsSchema = z.object({
@@ -13,6 +14,7 @@ export const TransactionListParamsSchema = z.object({
   type: z.enum(['transactions', 'credit', 'all']).optional(),
   fromDate: z.string().datetime().optional(),
   toDate: z.string().datetime().optional(),
+  direction: z.enum(['Incoming', 'Outgoing']),
 });
 
 export const TransactionListResponseSchema = z.object({

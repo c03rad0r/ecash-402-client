@@ -36,7 +36,6 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
-import { Badge } from '@/components/ui/badge';
 
 export function TransactionsMonitor({
   refreshInterval = 10000,
@@ -203,16 +202,12 @@ export function TransactionsMonitor({
                   </HoverCard>
                 </TableCell>
                 <TableCell>
-                  {transaction.direction && (
-                    <div className='flex items-center gap-1'>
-                      {getDirectionIcon(transaction.direction)}
-                      <span
-                        className={getDirectionClass(transaction.direction)}
-                      >
-                        {transaction.direction}
-                      </span>
-                    </div>
-                  )}
+                  <div className='flex items-center gap-1'>
+                    {getDirectionIcon(transaction.direction)}
+                    <span className={getDirectionClass(transaction.direction)}>
+                      {transaction.direction}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className='font-semibold'>
                   {transaction.amount}
