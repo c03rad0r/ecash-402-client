@@ -1,18 +1,7 @@
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use sqlx::types::time::OffsetDateTime;
 use sqlx::{Pool, Postgres};
 use std::fmt;
 use uuid::Uuid;
-
-pub fn offset_to_chrono(dt: OffsetDateTime) -> DateTime<Utc> {
-    let timestamp = dt.unix_timestamp();
-    DateTime::<Utc>::from_timestamp(timestamp, 0).unwrap_or_default()
-}
-
-pub fn offset_option_to_chrono(dt_opt: Option<OffsetDateTime>) -> Option<DateTime<Utc>> {
-    dt_opt.map(offset_to_chrono)
-}
 
 #[async_trait]
 pub trait DbCrud<T, C, U> {

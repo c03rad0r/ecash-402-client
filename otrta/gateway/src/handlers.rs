@@ -1,16 +1,19 @@
 use crate::{
     db::{
         Pool,
+        credit::{CreditListResponse, get_credits},
         server_config::{ServerConfigRecord, create_config, get_default_config, update_config},
+        transaction::{TransactionListResponse, get_transactions},
     },
     models::*,
 };
 use axum::{
     Json,
-    extract::State,
+    extract::{Query, State},
     http::{HeaderMap, StatusCode},
     response::Response,
 };
+use serde::Deserialize;
 use serde_json::{self, json};
 use std::sync::Arc;
 use wallet::{api::CashuWalletApi, models::ServerConfig};
@@ -88,4 +91,31 @@ pub async fn get_server_config(db: &Pool) -> Option<ServerConfigRecord> {
     }
 
     None
+}
+
+#[derive(Deserialize)]
+pub struct PaginationParams {
+    page: Option<i64>,
+    #[serde(rename = "pageSize")]
+    page_size: Option<i64>,
+}
+
+pub async fn get_all_credits(
+    State(state): State<Arc<AppState>>,
+    params: Query<PaginationParams>,
+) -> Result<Json<CreditListResponse>, StatusCode> {
+    match get_credits(&state.db, params.page, params.page_size).await {
+        Ok(response) => Ok(Json(response)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn get_all_transactions(
+    State(state): State<Arc<AppState>>,
+    params: Query<PaginationParams>,
+) -> Result<Json<TransactionListResponse>, StatusCode> {
+    match get_transactions(&state.db, params.page, params.page_size).await {
+        Ok(response) => Ok(Json(response)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
 }

@@ -8,6 +8,8 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  ArrowUpRight,
+  ArrowDownLeft,
 } from 'lucide-react';
 import { TransactionService } from '@/lib/api/services/transactions';
 import { TransactionListParams } from '@/lib/api/schemas/transactions';
@@ -34,8 +36,10 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import { Badge } from '@/components/ui/badge';
 
 export function TransactionsMonitor({
+  refreshInterval = 10000,
   defaultPageSize = 10,
 }: {
   refreshInterval?: number;
@@ -55,10 +59,29 @@ export function TransactionsMonitor({
       };
       return TransactionService.getTransactions(params);
     },
+    refetchInterval: refreshInterval,
   });
 
   const handlePageChange = (newPage: number) => {
     setQueryParams((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const getDirectionIcon = (direction: string) => {
+    if (direction === 'Incoming') {
+      return <ArrowDownLeft className='h-4 w-4 text-green-600' />;
+    } else if (direction === 'Outgoing') {
+      return <ArrowUpRight className='h-4 w-4 text-red-600' />;
+    }
+    return null;
+  };
+
+  const getDirectionClass = (direction: string) => {
+    if (direction === 'Incoming') {
+      return 'text-green-600';
+    } else if (direction === 'Outgoing') {
+      return 'text-red-600';
+    }
+    return '';
   };
 
   return (
@@ -157,6 +180,7 @@ export function TransactionsMonitor({
           <TableHeader>
             <TableRow>
               <TableHead>Token</TableHead>
+              <TableHead>Direction</TableHead>
               <TableHead>Amount (sats)</TableHead>
               <TableHead>Created At</TableHead>
             </TableRow>
@@ -177,6 +201,18 @@ export function TransactionsMonitor({
                       </div>
                     </HoverCardContent>
                   </HoverCard>
+                </TableCell>
+                <TableCell>
+                  {transaction.direction && (
+                    <div className='flex items-center gap-1'>
+                      {getDirectionIcon(transaction.direction)}
+                      <span
+                        className={getDirectionClass(transaction.direction)}
+                      >
+                        {transaction.direction}
+                      </span>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className='font-semibold'>
                   {transaction.amount}

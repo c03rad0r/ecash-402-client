@@ -1,4 +1,3 @@
-use crate::db::helpers::{offset_option_to_chrono, offset_to_chrono};
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use wallet::models::ServerConfig;
@@ -25,8 +24,8 @@ pub async fn get_all_configs(pool: &PgPool) -> Result<Vec<ServerConfigRecord>, s
         id: record.id,
         endpoint: record.endpoint,
         api_key: record.api_key,
-        created_at: offset_to_chrono(record.created_at),
-        updated_at: offset_option_to_chrono(record.updated_at),
+        created_at: record.created_at,
+        updated_at: record.updated_at,
     })
     .collect();
 
@@ -53,8 +52,8 @@ pub async fn get_config_by_id(
             id: r.id,
             endpoint: r.endpoint,
             api_key: r.api_key,
-            created_at: offset_to_chrono(r.created_at),
-            updated_at: offset_option_to_chrono(r.updated_at),
+            created_at: r.created_at,
+            updated_at: r.updated_at,
         })),
         None => Ok(None),
     }
@@ -77,8 +76,8 @@ pub async fn get_default_config(pool: &PgPool) -> Result<Option<ServerConfigReco
             id: r.id,
             endpoint: r.endpoint,
             api_key: r.api_key,
-            created_at: offset_to_chrono(r.created_at),
-            updated_at: offset_option_to_chrono(r.updated_at),
+            created_at: r.created_at,
+            updated_at: r.updated_at,
         })),
         None => Ok(None),
     }
@@ -110,8 +109,8 @@ pub async fn create_config(
         id: record.id,
         endpoint: record.endpoint,
         api_key: record.api_key,
-        created_at: offset_to_chrono(record.created_at),
-        updated_at: offset_option_to_chrono(record.updated_at),
+        created_at: record.created_at,
+        updated_at: record.updated_at,
     })
 }
 
@@ -138,8 +137,8 @@ pub async fn update_config(
         id: record.id,
         endpoint: record.endpoint,
         api_key: record.api_key,
-        created_at: offset_to_chrono(record.created_at),
-        updated_at: offset_option_to_chrono(record.updated_at),
+        created_at: record.created_at,
+        updated_at: record.updated_at,
     })
 }
 

@@ -1,5 +1,9 @@
 use crate::{
-    db::{Pool, change::add_change_transaction},
+    db::{
+        Pool,
+        credit::add_credit,
+        transaction::{TransactionDirection, add_transaction},
+    },
     handlers::get_server_config,
     models::*,
 };
@@ -157,7 +161,9 @@ pub async fn forward_request_with_payment_with_body<T: serde::Serialize>(
         req_builder = req_builder.json(&body_data);
     }
 
-    let token_result = wallet.send(20, None, None, None, None).await;
+    let sats = 10;
+
+    let token_result = wallet.send(sats, None, None, None, None).await;
     let token = match token_result {
         Ok(token) => token.token,
         Err(e) => {
@@ -197,15 +203,28 @@ pub async fn forward_request_with_payment_with_body<T: serde::Serialize>(
             }
 
             if let Some(change_sats) = headers.get("X-CHANGE-SATS") {
+                let in_token = change_sats.to_str().unwrap();
                 if let Ok(res) = wallet
                     .receive(Some(change_sats.to_str().unwrap()), None, None)
                     .await
                 {
-                    println!(
-                        "received change, balance: '{}' '{}'",
-                        res.balance,
-                        change_sats.to_str().unwrap()
-                    );
+                    add_transaction(
+                        &db,
+                        &token,
+                        &sats.to_string(),
+                        TransactionDirection::Outgoing,
+                    )
+                    .await
+                    .unwrap();
+
+                    add_transaction(
+                        &db,
+                        in_token,
+                        &(res.balance - res.initial_balance).to_string(),
+                        TransactionDirection::Incoming,
+                    )
+                    .await
+                    .unwrap();
                 }
             }
 
@@ -213,7 +232,7 @@ pub async fn forward_request_with_payment_with_body<T: serde::Serialize>(
                 headers.get("X-CHANGE-TOKEN"),
                 headers.get("X-CHANGE-AMOUNT"),
             ) {
-                let _ = add_change_transaction(
+                let _ = add_credit(
                     &db,
                     change_token.to_str().unwrap(),
                     change_amount.to_str().unwrap(),
