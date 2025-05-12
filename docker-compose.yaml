@@ -56,9 +56,7 @@ services:
 
   otrta_wallet:
     container_name: otrta_wallet
-    build:
-      context: otrta
-      dockerfile: Dockerfile.wallet
+    image: cashubtc/nutshell:0.16.5
     ports:
       - "4448:4448"
     environment:
