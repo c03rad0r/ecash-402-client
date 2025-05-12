@@ -332,10 +332,6 @@ pub async fn forward_request(
 
     let mut req_builder = client.get(endpoint_url);
 
-    req_builder = req_builder.header(
-        header::AUTHORIZATION,
-        format!("Bearer {}", server_config.api_key),
-    );
     req_builder = req_builder.header(header::CONTENT_TYPE, "application/json");
 
     if let Some(accept) = original_headers.get(header::ACCEPT) {
