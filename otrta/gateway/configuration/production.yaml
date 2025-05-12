@@ -1,5 +1,5 @@
 application:
-  wallet_utl: "http://otrta_wallet:4448"
+  wallet_url: "http://otrta_wallet:4448"
 database:
   host: "otrta-db"
   port: 5432

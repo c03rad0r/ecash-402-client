@@ -36,7 +36,7 @@ async fn main() {
         .run(&connection_pool)
         .await
         .unwrap();
-    let wallet = CashuWalletClient::new(&configuration.application.wallet_utl);
+    let wallet = CashuWalletClient::new(&configuration.application.wallet_url);
 
     let app_state = Arc::new(AppState {
         db: connection_pool.clone(),

@@ -16,7 +16,7 @@ pub struct ApplicationSettings {
     pub host: String,
     pub worker: usize,
     pub connections: usize,
-    pub wallet_utl: String,
+    pub wallet_url: String,
 }
 
 #[derive(Debug, serde::Deserialize, Clone)]
