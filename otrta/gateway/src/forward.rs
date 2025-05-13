@@ -161,7 +161,7 @@ pub async fn forward_request_with_payment_with_body<T: serde::Serialize>(
         req_builder = req_builder.json(&body_data);
     }
 
-    let sats = 10;
+    let sats = 30;
 
     let token_result = wallet.send(sats, None, None, None, None).await;
     let token = match token_result {
