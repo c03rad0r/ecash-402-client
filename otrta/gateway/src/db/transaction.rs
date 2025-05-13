@@ -72,13 +72,12 @@ pub async fn get_transactions(
     page: Option<i64>,
     page_size: Option<i64>,
 ) -> Result<TransactionListResponse, sqlx::Error> {
-    // Default values if not provided
     let page = page.unwrap_or(1);
     let page_size = page_size.unwrap_or(10);
 
     let offset = (page - 1) * page_size;
 
-    let total = sqlx::query_scalar(r#"SELECT COUNT(*) FROM credits"#)
+    let total = sqlx::query_scalar(r#"SELECT COUNT(*) FROM transactions"#)
         .fetch_one(pool)
         .await
         .unwrap_or(0);
@@ -95,7 +94,7 @@ pub async fn get_transactions(
             amount,
             direction as "direction: TransactionDirection"
         FROM transactions
-        ORDER BY created_at
+        ORDER BY created_at DESC
         LIMIT $1 OFFSET $2
         "#,
         page_size,
