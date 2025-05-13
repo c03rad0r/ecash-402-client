@@ -145,8 +145,17 @@ There are two approaches to handling mint fees:
 
 ```bash
 # Run the client component
-docker-compose -f docker-compose.client.yaml up
+docker-compose up
 ```
+
+or
+
+```bash
+# Run the client component
+docker-compose up -d
+```
+
+to run in the background
 
 The user interface can be accessed at http://localhost:3332.
 
