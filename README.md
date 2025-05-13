@@ -161,7 +161,7 @@ The user interface can be accessed at http://localhost:3332.
 
 At present, the wallet is designed to accept eCash tokens from Minitbits wallets, though this will be updated in the future.
 
-Currently, the client utilizes an external [Wallet](https://github.com/cashubtc/nutshell).
+Currently, the client utilizes an external [Wallet](https://github.com/cashubtc/nutshell)(V 0.16.5).
 
 Thank you to the creator of the Nutshell Wallet for their hard work!
 
